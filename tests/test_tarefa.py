@@ -26,7 +26,7 @@ class TestTarefa(unittest.TestCase):
 
     def test_criar_tarefa_com_status_inexistente(self):
         with self.assertRaises(ValueError):
-            Tarefa(id=6, descricao="Minha descricao", status="Invalida")
+            Tarefa(id=6, descricao="Minha descricao", status="Em andamento")
 
     def test_criar_tarefa_sem_status_deve_ficar_pendente(self):
         tarefa = Tarefa(id=7, descricao="Minha descricao")
