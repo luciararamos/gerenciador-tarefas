@@ -46,7 +46,7 @@ class TestGerenciadorTarefas(unittest.TestCase):
 
 #Adicionar
 
-    #Adicionar nova tarefa
+    #adicionar nova tarefa
     @patch('builtins.open', new_callable=mock_open, read_data="")
     @patch.object(GerenciadorTarefas, '_salvar_tarefas')
     def test_adicionar_nova_tarefa_valida(self, _mock_salvar, _mock_file):
@@ -54,7 +54,7 @@ class TestGerenciadorTarefas(unittest.TestCase):
         gerenciador.adicionar_tarefa("Nova Tarefa")
         self.assertEqual(len(gerenciador._tarefas), 1)
 
-    #Adicionar tarefa invalida
+    #adicionar tarefa invalida
     @patch('builtins.open', new_callable=mock_open, read_data="")
     @patch.object(GerenciadorTarefas, '_salvar_tarefas')
     def test_adicionar_nova_tarefa_invalida(self, _mock_salvar, _mock_file):
@@ -129,9 +129,9 @@ class TestGerenciadorTarefas(unittest.TestCase):
     #Buscar por id
     @patch('builtins.open', new_callable=mock_open, read_data="")
     @patch.object(GerenciadorTarefas, '_salvar_tarefas')
-    def test_buscar_tarefa_por_id_existente(self, _mock_salvar, _mock_open):
+    def test_buscar_tarefa_por_id_existente(self, _mock_salvar, _mock_open): 
         gerenciador = GerenciadorTarefas()
-        tarefa_adicionada = gerenciador.adicionar_tarefa("Tarefa Existente")
+        tarefa_adicionada = gerenciador.adicionar_tarefa("Tarefa Existente") #recebe id 1 por ser a primeira tarefa
         tarefa_encontrada = gerenciador._buscar_tarefa_por_id(tarefa_adicionada.id)
         self.assertIsNotNone(tarefa_encontrada)
         self.assertEqual(tarefa_encontrada.descricao, "Tarefa Existente")
@@ -140,5 +140,5 @@ class TestGerenciadorTarefas(unittest.TestCase):
     @patch('builtins.open', new_callable=mock_open, read_data="")
     def test_buscar_tarefa_por_id_inexistente(self, _mock_open):
         gerenciador = GerenciadorTarefas()
-        tarefa_encontrada = gerenciador._buscar_tarefa_por_id(999)
+        tarefa_encontrada = gerenciador._buscar_tarefa_por_id(3) #id próximo que não existe
         self.assertIsNone(tarefa_encontrada)
