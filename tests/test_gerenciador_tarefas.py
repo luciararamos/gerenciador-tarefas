@@ -11,7 +11,7 @@ class TestGerenciadorTarefas(unittest.TestCase):
     #1 arquivo valido
     @patch('builtins.open', new_callable=mock_open, read_data="id,descricao,status\n1,Tarefa de teste,Pendente")
     def test_iniciar_gerenciador_com_arquivo_valido(self, _mock_file):
-        from io import StringIO #utilizei essa sugestão do gemini que permite capturar o que é impresso com print / cria um arquivo fake p capturar saída / redireciona saída do print p o arquivo fake
+        from io import StringIO  #utilizei essa sugestão do gemini que permite capturar o que é impresso com print / cria um arquivo fake p capturar saída / redireciona saída do print p o arquivo fake
         fake_out = StringIO() 
         with patch('sys.stdout', new=fake_out): 
             gerenciador = GerenciadorTarefas(filepath='minhas_tarefas.csv') #continue utilizando o arquivo minhas_tarefas pois ele possui conteúdo
