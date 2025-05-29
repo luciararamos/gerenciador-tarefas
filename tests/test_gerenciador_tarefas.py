@@ -225,7 +225,7 @@ class TestGerenciadorTarefas(unittest.TestCase):
     @patch('builtins.open', new_callable=mock_open, read_data="")
     @patch.object(GerenciadorTarefas, '_salvar_tarefas')
     def test_buscar_tarefa_por_id_existente(self, _mock_salvar, _mock_open):
-        gerenciador = GerenciadorTarefas()
+        gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
         tarefa_adicionada = gerenciador.adicionar_tarefa("Tarefa Existente") #recebe id 1 por ser a primeira tarefa
         tarefa_encontrada = gerenciador._buscar_tarefa_por_id(tarefa_adicionada.id)
         self.assertIsNotNone(tarefa_encontrada) #trf encontrada pelo id
