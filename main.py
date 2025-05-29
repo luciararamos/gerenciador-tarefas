@@ -1,6 +1,6 @@
 # projeto_tarefas_csv/main.py
 
-from gerenciador_tarefas import GerenciadorTarefas
+from gerenciador import GerenciadorTarefas
 
 def imprimir_lista(titulo: str, lista_tarefas: list):
     """Função auxiliar para imprimir listas de tarefas de forma organizada."""

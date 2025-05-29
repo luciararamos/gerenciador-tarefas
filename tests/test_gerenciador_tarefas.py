@@ -1,92 +1,99 @@
 import unittest
 from unittest.mock import patch, mock_open
-from gerenciador_tarefas.gerenciador_tarefas import GerenciadorTarefas
-from gerenciador_tarefas.tarefa import Tarefa
+from gerenciador import GerenciadorTarefas 
+from tarefa import Tarefa
+from io import StringIO
+import os
 
 
 class TestGerenciadorTarefas(unittest.TestCase):
+
+    def setUp(self):
+        self.test_filepath = 'test_tarefas.csv'
+        if os.path.exists(self.test_filepath):
+            os.remove(self.test_filepath)
+    
+    def tearDown(self):
+        if os.path.exists(self.test_filepath):
+            os.remove(self.test_filepath)
+
+    
 
 #Iniciar gerenciador
 
     #1 arquivo valido
     @patch('builtins.open', new_callable=mock_open, read_data="id,descricao,status\n1,Tarefa de teste,Pendente")
     def test_iniciar_gerenciador_com_arquivo_valido(self, _mock_file):
-        from io import StringIO  #utilizei essa sugestão do gemini que permite capturar o que é impresso com print / cria um arquivo fake p capturar saída / redireciona saída do print p o arquivo fake
-        fake_out = StringIO() 
-        with patch('sys.stdout', new=fake_out): 
-            gerenciador = GerenciadorTarefas(filepath='minhas_tarefas.csv') #continue utilizando o arquivo minhas_tarefas pois ele possui conteúdo
+        fake_out = StringIO()
+        with patch('sys.stdout', new=fake_out):
+            gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
         output = fake_out.getvalue()
         self.assertIsInstance(gerenciador, GerenciadorTarefas)
-        self.assertEqual(gerenciador._filepath, 'minhas_tarefas.csv')
+        self.assertEqual(gerenciador._filepath, self.test_filepath)
         self.assertEqual(len(gerenciador.listar_tarefas()), 1)
         tarefa = gerenciador.listar_tarefas()[0]
         self.assertEqual(tarefa.id, 1)
         self.assertEqual(tarefa.descricao, "Tarefa de teste")
         self.assertEqual(tarefa.status, Tarefa.STATUS_PENDENTE)
         self.assertEqual(gerenciador._proximo_id, 2)
-        self.assertIn("Tarefas carregadas de 'minhas_tarefas.csv'. Próximo ID: 2", output) #mensagem validacao
+        self.assertIn(f"Tarefas carregadas de '{self.test_filepath}'. Próximo ID: 2", output) #mensagem validacao
 
         
     #2 arquivo inválido, malformado
     @patch('builtins.open', new_callable=mock_open, read_data="id,name\n1,Tarefa sem descricao") 
     def test_iniciar_gerenciador_com_arquivo_invalido(self, _mock_file):
-        from io import StringIO
         fake_out = StringIO()
         with patch('sys.stdout', new=fake_out):
-            gerenciador = GerenciadorTarefas(filepath='arquivo_invalido.csv')
+            gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
         output = fake_out.getvalue()
         self.assertEqual(len(gerenciador.listar_tarefas()), 0)
-        self.assertEqual(gerenciador._filepath, 'arquivo_invalido.csv')
+        self.assertEqual(gerenciador._filepath, self.test_filepath)
         self.assertEqual(gerenciador._tarefas, [])
         self.assertEqual(gerenciador._proximo_id, 1)
-        self.assertIn("Linha 1 ignorada no CSV por falta de colunas esperadas (arquivo_invalido.csv)", output) #mensagem validacao
-
+        self.assertIn(f"Linha 1 ignorada no CSV por falta de colunas esperadas ({self.test_filepath}). Conteúdo: {{'id': '1', 'name': 'Tarefa sem descricao'}}", output)
 
     #3 sem arquivo
     @patch('builtins.open', side_effect=FileNotFoundError)
     def test_iniciar_gerenciador_sem_arquivo(self, _mock_file):
-        from io import StringIO
         fake_out = StringIO()
         with patch('sys.stdout', new=fake_out):
-            gerenciador = GerenciadorTarefas()
+            gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
         output = fake_out.getvalue()
-        self.assertIsInstance(gerenciador, GerenciadorTarefas)  
-        self.assertEqual(gerenciador._filepath, 'tarefas.csv')  #valida que não existe
+        self.assertIsInstance(gerenciador, GerenciadorTarefas)
+        self.assertEqual(gerenciador._filepath, self.test_filepath)  #valida que não existe
         self.assertEqual(len(gerenciador.listar_tarefas()), 0)  #lista vazia
         self.assertEqual(gerenciador._tarefas, [])  #garantia que não há tarefas
         self.assertEqual(gerenciador._proximo_id, 1)  #garantia que o próximo id é 1
-        self.assertIn("Arquivo 'tarefas.csv' não encontrado. Começando com lista de tarefas vazia.", output) #mensagem validacao
+        self.assertIn(f"Arquivo '{self.test_filepath}' não encontrado. Começando com lista de tarefas vazia.", output) #mensagem validacao
 
 
     #4 arquivo vazio
     @patch('builtins.open', new_callable=mock_open, read_data="") 
     def test_iniciar_gerenciador_com_arquivo_vazio(self, _mock_file):
-        from io import StringIO
         fake_out = StringIO()
         with patch('sys.stdout', new=fake_out):
-            gerenciador = GerenciadorTarefas(filepath='arquivo_vazio.csv')
+            gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
             output = fake_out.getvalue()
             self.assertEqual(len(gerenciador.listar_tarefas()), 0)
-            self.assertEqual(gerenciador._filepath, 'arquivo_vazio.csv')
-            self.assertEqual(gerenciador._tarefas, [])  #garantia que não há tarefas
+            self.assertEqual(gerenciador._filepath, self.test_filepath) #valida que não existe
+            self.assertEqual(gerenciador._tarefas, []) #garantia que não há tarefas
             self.assertEqual(gerenciador._proximo_id, 1)  #garantia que o próximo id é 1
-            self.assertIn("Tarefas carregadas de 'arquivo_vazio.csv'. Próximo ID: 1", output) #mensagem validacao
+            self.assertIn(f"Tarefas carregadas de '{self.test_filepath}'. Próximo ID: 1", output) #mensagem validacao
         
 
     #5 arquivo com status inválido
     @patch('builtins.open', new_callable=mock_open, read_data="id,descricao,status\n1,Tarefa errada,Em andamento")
     def test_iniciar_gerenciador_com_status_invalido(self, _mock_file):
-        from io import StringIO
         fake_out = StringIO()
-        with patch('sys.stdout', new=fake_out):
-            gerenciador = GerenciadorTarefas(filepath='arquivo_com_status_invalido.csv')
+        with patch('sys.stdout', new=fake_out): # Captura a saída padrão para verificar as mensagens de aviso
+            gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
             output = fake_out.getvalue()
-            self.assertEqual(len(gerenciador.listar_tarefas()), 0)
-            self.assertEqual(gerenciador._filepath, 'arquivo_com_status_invalido.csv') 
+            self.assertEqual(len(gerenciador.listar_tarefas()), 0) #garantia que não há tarefas
+            self.assertEqual(gerenciador._filepath, self.test_filepath)
             self.assertEqual(gerenciador._proximo_id, 1) #garantia que o próximo id é 1
             self.assertEqual(gerenciador._tarefas, []) #garantia que não há tarefas
-            self.assertIn("Status inválido: Em andamento. Use 'Pendente' ou 'Concluída'", output) #mensagem validacao1
-            self.assertIn("Erro ao processar linha 1 do CSV (arquivo_com_status_invalido.csv)", output) #mensagem validacao2
+            self.assertIn("Status inválido: Em andamento. Use 'Pendente' ou 'Concluída'.", output) #mensagem validacao1
+            self.assertIn(f"Erro ao processar linha 1 do CSV ({self.test_filepath})", output) #mensagem validacao2
                 
 
 #Adicionar
@@ -95,7 +102,7 @@ class TestGerenciadorTarefas(unittest.TestCase):
     @patch('builtins.open', new_callable=mock_open, read_data="")
     @patch.object(GerenciadorTarefas, '_salvar_tarefas') #o motivo que utilizei o _salvar_tarefas foi para salvar a nova tarefa adicionada, por sugestão do gemini
     def test_adicionar_nova_tarefa_valida(self, mock_salvar, _mock_file):
-        gerenciador = GerenciadorTarefas()
+        gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
         gerenciador.adicionar_tarefa("Nova Tarefa")
         self.assertEqual(len(gerenciador._tarefas), 1)  
         self.assertEqual(gerenciador._tarefas[0].descricao, "Nova Tarefa")
@@ -108,7 +115,7 @@ class TestGerenciadorTarefas(unittest.TestCase):
     @patch('builtins.open', new_callable=mock_open, read_data="")
     @patch.object(GerenciadorTarefas, '_salvar_tarefas')
     def test_adicionar_nova_tarefa_invalida(self, _mock_salvar, _mock_file):
-        gerenciador = GerenciadorTarefas()
+        gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
         with self.assertRaises(ValueError) as context:
             gerenciador.adicionar_tarefa("")
             self.assertEqual(str(context.exception), "A descrição da tarefa não pode ser vazia.")
@@ -122,7 +129,7 @@ class TestGerenciadorTarefas(unittest.TestCase):
     @patch('builtins.open', new_callable=mock_open, read_data="")
     @patch.object(GerenciadorTarefas, '_salvar_tarefas')
     def test_remover_tarefa_existente(self, _mock_salvar, _mock_open):
-        gerenciador = GerenciadorTarefas()
+        gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
         tarefa = gerenciador.adicionar_tarefa("Tarefa Existente")
         gerenciador.remover_tarefa(tarefa.id) 
         self.assertEqual(len(gerenciador._tarefas), 0) #garantir que não há tarefas
@@ -132,16 +139,13 @@ class TestGerenciadorTarefas(unittest.TestCase):
 
     #9 Remover tarefa inexistente
     @patch('builtins.open', new_callable=mock_open, read_data="")
-    @patch.object(GerenciadorTarefas, '_salvar_tarefas')
-    def test_remover_tarefa_inexistente(self, _mock_salvar, _mock_open):
-        gerenciador = GerenciadorTarefas()
-        with self.assertRaises(ValueError):
+    def test_remover_tarefa_inexistente(self, _mock_open):
+        gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
+        with self.assertRaisesRegex(ValueError, r"Erro: Tarefa com ID \d+ não encontrada para remoção."):
             gerenciador.remover_tarefa(999)
             gerenciador.remover_tarefa(0)
-            gerenciador.remover_tarefa(1)
-            self.assertEqual(len(gerenciador._tarefas), 0) 
-            self.assertEqual(gerenciador._proximo_id, 1)
-            self.assertEqual(_mock_salvar.call_count, 2)  #uma ao adicionar, outra ao remover
+        self.assertEqual(len(gerenciador._tarefas), 0)
+        self.assertEqual(gerenciador._proximo_id, 1)
 
 
 #Listar tarefas
@@ -149,20 +153,20 @@ class TestGerenciadorTarefas(unittest.TestCase):
     #10 Listar tarefas vazias | adicionei mais funcionalidades no teste
     @patch('builtins.open', new_callable=mock_open, read_data="")
     def test_listar_tarefas_vazia(self, _mock_open):
-        gerenciador = GerenciadorTarefas()
+        gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
         tarefas = gerenciador.listar_tarefas()
         self.assertEqual(tarefas, []) #nenhuma tarefa carregada
         self.assertEqual(gerenciador._proximo_id, 1) #id inicial 1
-        self.assertEqual(gerenciador._tarefas, []) #garantir que a lista está vazia
-        self.assertIsInstance(gerenciador, GerenciadorTarefas) 
-        self.assertEqual(gerenciador._filepath, 'tarefas.csv') #valida que não existe
+        self.assertEqual(gerenciador._tarefas, []) #garantir que a lista está vazia 
+        self.assertIsInstance(gerenciador, GerenciadorTarefas)
+        self.assertEqual(gerenciador._filepath, self.test_filepath) #valida que não existe
 
 
     #11 Listar tarefas pendentes 
     @patch('builtins.open', new_callable=mock_open, read_data="")
     @patch.object(GerenciadorTarefas, '_salvar_tarefas')
     def test_listar_tarefas_pendentes(self, _mock_salvar, _mock_open):
-        gerenciador = GerenciadorTarefas()
+        gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
         gerenciador.adicionar_tarefa("Tarefa Pendente 1")
         gerenciador.adicionar_tarefa("Tarefa Pendente 2")
         gerenciador.adicionar_tarefa("Tarefa Pendente 3")
@@ -190,7 +194,7 @@ class TestGerenciadorTarefas(unittest.TestCase):
     @patch('builtins.open', new_callable=mock_open, read_data="")
     @patch.object(GerenciadorTarefas, '_salvar_tarefas')
     def test_listar_tarefas_concluidas(self, _mock_salvar, _mock_open):
-        gerenciador = GerenciadorTarefas()
+        gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
         gerenciador.adicionar_tarefa("Tarefa Concluída 1")
         gerenciador.marcar_como_concluida(1)
         tarefas_concluidas = gerenciador.listar_tarefas_concluidas()
@@ -205,7 +209,7 @@ class TestGerenciadorTarefas(unittest.TestCase):
     @patch('builtins.open', new_callable=mock_open, read_data="")
     @patch.object(GerenciadorTarefas, '_salvar_tarefas')
     def test_listas_todas_tarefas(self, _mock_salvar, _mock_open):
-        gerenciador = GerenciadorTarefas()
+        gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
         gerenciador.adicionar_tarefa("Tarefa 1")
         gerenciador.adicionar_tarefa("Tarefa 2")
         tarefas = gerenciador.listar_tarefas()
@@ -220,7 +224,7 @@ class TestGerenciadorTarefas(unittest.TestCase):
     #Buscar por id
     @patch('builtins.open', new_callable=mock_open, read_data="")
     @patch.object(GerenciadorTarefas, '_salvar_tarefas')
-    def test_buscar_tarefa_por_id_existente(self, _mock_salvar, _mock_open): 
+    def test_buscar_tarefa_por_id_existente(self, _mock_salvar, _mock_open):
         gerenciador = GerenciadorTarefas()
         tarefa_adicionada = gerenciador.adicionar_tarefa("Tarefa Existente") #recebe id 1 por ser a primeira tarefa
         tarefa_encontrada = gerenciador._buscar_tarefa_por_id(tarefa_adicionada.id)
@@ -231,10 +235,6 @@ class TestGerenciadorTarefas(unittest.TestCase):
     #Buscar por id inexistente
     @patch('builtins.open', new_callable=mock_open, read_data="")
     def test_buscar_tarefa_por_id_inexistente(self, _mock_open):
-        gerenciador = GerenciadorTarefas()
+        gerenciador = GerenciadorTarefas(filepath=self.test_filepath)
         tarefa_encontrada = gerenciador._buscar_tarefa_por_id(3) #id próximo que não existe
         self.assertIsNone(tarefa_encontrada)
-
-
-if __name__ == '__main__':
-    unittest.main() 

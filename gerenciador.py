@@ -2,7 +2,8 @@
 
 import csv
 from typing import List, Optional   #importando duas ferramentas do módulo typind 
-from gerenciador_tarefas.tarefa import Tarefa
+from tarefa import Tarefa
+
 
 class GerenciadorTarefas:
     """Gerencia uma coleção de objetos Tarefa, com persistência em arquivo CSV."""
